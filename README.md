@@ -1,4 +1,4 @@
 PING
 ====
-Hier meine lösungen.\n
-Runterladen rechts mit dem download zip button
+Hier meine lösungen.
+Runterladen geht rechts mit dem download zip button
