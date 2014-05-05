@@ -14,9 +14,10 @@ void setup()
 }
 
 
-void loop() {
-digitalWrite(led, HIGH);
-delay(delay_an);  //Variable um die Zeit leichter verändern zu können
-digitalWrite(led, LOW);
-delay(delay_aus); //Diese Zeile muss hinzugefügt werden,um die LED zum blinken zu bringen
+void loop() 
+{
+  digitalWrite(led, HIGH);
+  delay(delay_an);  //Variable um die Zeit leichter verändern zu können
+  digitalWrite(led, LOW);
+  delay(delay_aus); //Diese Zeile muss hinzugefügt werden,um die LED zum blinken zu bringen
 }
