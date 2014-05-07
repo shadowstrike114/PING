@@ -94,7 +94,8 @@ void loop()
   //lauflicht();      // Aufgabe 2 
   //wuerfeleins();    //Aufgabe 3
   //wuerfelzwei();    //Aufgabe 3 Bonusaufgabe
-  //digit(123);       //Aufgabe 4, werte > 9: undefiniertes Verhalten, wnegative werte: undefiniertes verhalten, da digit unsigned verwendet und die funktion daher mit einem sehr großen wert aufgerufen wird 
+  //digit(123);       //Aufgabe 4, werte > 9: undefiniertes Verhalten, wnegative werte: undefiniertes verhalten, 
+                      //da digit unsigned verwendet und die funktion daher mit einem sehr großen wert aufgerufen wird 
 }
 
 
