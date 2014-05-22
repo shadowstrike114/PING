@@ -220,7 +220,7 @@ void setup() {
     B11100, 
     B10001, 
     B01110, 
-    B00000   };
+    B00000     };
 
   lcd.createChar(0,euro);
   lcd.begin(16, 2);
@@ -240,3 +240,4 @@ void loop() {
   // pay_for_drink(selection);
   // dispense_drink(selection);
 }
+
