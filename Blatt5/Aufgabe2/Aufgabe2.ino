@@ -302,7 +302,7 @@ void balkenDiagramm(int zeile, int spalte, int wert, int minimum, int maximum)
   }
   for(int i = 0 ; i < 6 - anzahlRauten ; i++)
   {
-    //lcd.write(0); seit Arduino 1.0 nicht mehr so funktionsfähig
+    //lcd.write(0); für galileo
     lcd.print((char)0); 
   }
 
