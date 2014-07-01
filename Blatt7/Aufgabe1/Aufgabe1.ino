@@ -137,7 +137,7 @@ void auswahl(){
     }
     if ( digitalRead(PREV) && millis() - letzterDruck > 250)
     {
-      if (wahl < 0)
+      if (wahl > 0)
       {
         wahl--;
         lcd.print(name[wahl]);
