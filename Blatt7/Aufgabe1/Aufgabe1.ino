@@ -58,10 +58,12 @@ void abbruch();
 uint32_t letzterDruck = 0;
 int start;
 int ziel;
+int pos = 0;
 boolean weiter  = false;
 boolean zurueck = false;
 boolean abbr = false;
 boolean navigationAktiv = false;
+boolean zeigen = false;
 
 void setup() {
   lcd.begin(16, 2);
@@ -84,13 +86,15 @@ void loop() {
     abbr = true;
     letzterDruck = millis();
   }
-
+  
   if (navigationAktiv){
     navigation(start,ziel);
+    abbruch();
   }
-  else{
+  else if (!navigationAktiv){
     auswahl();
     navigationAktiv = true;
+    zeigen = true;
   }
 
 }
@@ -100,17 +104,32 @@ void abbruch(){
     lcd.clear();
     lcd.print("Abbrechen? (y/n)");
     lcd.setCursor(0,1);
+    lcd.print("Nein");
 
     boolean abbrechen = false;
-    while (!digitalRead(OK) && millis() - letzterDruck > 250)
+    
+    while (digitalRead(OK));
+    delay(250);
+    while (!digitalRead(OK))
     {
       if ((digitalRead(PREV) || digitalRead(NEXT)) && millis() - letzterDruck > 250){
         abbrechen = !abbrechen;
         letzterDruck = millis();
       }
+      if (abbrechen){
+        lcd.setCursor(0,1);
+        lcd.print("Ja  ");  
+      }else{
+        lcd.setCursor(0,1);
+        lcd.print("Nein"); 
+      }
     }
     if (abbrechen)
       navigationAktiv = false;
+    
+    abbr = false;
+    zeigen = true;
+    delay(250);
   }  
 }
 
@@ -123,13 +142,15 @@ void auswahl(){
 
   lcd.print(name[wahl]);
   lcd.print(" ");//2ten buchstaben löschen
+  Serial.println(digitalRead(OK));
 
-  while(!digitalRead(OK) && millis() - letzterDruck > 250){
+  while(!digitalRead(OK)){
     if ( digitalRead(NEXT) && millis() - letzterDruck > 250)
     {
-      if (wahl < CITIES)
+      if (wahl < CITIES - 1)
       {
         wahl++;
+        lcd.setCursor(0,1);
         lcd.print(name[wahl]);
         lcd.print(" ");//2ten buchstaben löschen
       }
@@ -140,15 +161,14 @@ void auswahl(){
       if (wahl > 0)
       {
         wahl--;
+        lcd.setCursor(0,1);
         lcd.print(name[wahl]);
         lcd.print(" ");//2ten buchstaben löschen
       }
       letzterDruck = millis();
-    }
-    start = wahl;  
-    lcd.print(name[wahl]);
-    lcd.print(" ");//2ten buchstaben löschen
+    } 
   }
+  start = wahl; 
 
   lcd.clear();
   lcd.print("Ziel ausw\341hlen");
@@ -156,41 +176,47 @@ void auswahl(){
 
   lcd.print(name[wahl]);
   lcd.print(" ");//2ten buchstaben löschen
+  
+  delay(250);
 
-  while(!digitalRead(OK) && millis() - letzterDruck > 250){
+  while(!digitalRead(OK)){
     if ( digitalRead(NEXT) && millis() - letzterDruck > 250)
     {
-      if (wahl < CITIES)
+      if (wahl < CITIES - 1)
       {
         wahl++;
+        lcd.setCursor(0,1);
         lcd.print(name[wahl]);
         lcd.print(" ");//2ten buchstaben löschen
+        Serial.println("test");
       }
       letzterDruck = millis();
     }
     if ( digitalRead(PREV) && millis() - letzterDruck > 250)
     {
-      if (wahl < 0)
+      if (wahl > 0)
       {
         wahl--;
+        lcd.setCursor(0,1);
         lcd.print(name[wahl]);
         lcd.print(" ");//2ten buchstaben löschen
       }
       letzterDruck = millis();
     } 
-    ziel = wahl; 
-    lcd.print(name[wahl]);
-    lcd.print(" ");//2ten buchstaben löschen
   }
+  ziel = wahl;
+  pos = 0;
+  delay(250);
   letzterDruck = millis();
 
 }
 
 
 void navigation(int von, int zu){
-  static int pos = 0;
   int ort = von;
-  if (weiter || zurueck){
+  
+  if (weiter || zurueck || zeigen){
+    zeigen = false;
     for (int i = 0; i < pos; i++)
     {
       ort = via[zu][ort];
@@ -198,12 +224,17 @@ void navigation(int von, int zu){
     int nxt = via[zu][ort];
     int dann = via[zu][nxt];
 
-    schritt(ort,nxt,dann,zu);
-    if (ort != zu && weiter)
+    if (ort != zu && weiter){
       pos++;
-    if (ort >= 0 && zurueck)
+      zeigen = true;
+    }
+    if (ort >= 0 && zurueck){
+      zeigen = true;
       pos--;
-
+    }   
+    
+    schritt(ort,nxt,dann,zu);
+    
     weiter  = false;
     zurueck = false;
   }  
@@ -232,7 +263,7 @@ void schritt(int von,int zu,int danach,int ziel){
   else{
     lcd.clear();
     char buffer[32];
-    sprintf(buffer, "%s\176%s! Danach \176%s", name[von],name[zu],name[danach]);
+    sprintf(buffer, "%s\176%s! Danach\176%s", name[von],name[zu],name[danach]);
     lcd.print(buffer);
     lcd.setCursor(0,1);
     sprintf(buffer, "Zu Fahren: %d",entfernung(von,ziel));
