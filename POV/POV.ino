@@ -1,5 +1,10 @@
+#include <DHT.h>
 #include <SPI.h>
 #include "ascii.h"
+
+//Temperatur- und Luftfeuchtigkeitssensor
+DHT dht(4,11);
+
 
 //FORMAT: GRB
 #define ARRAYLEN 45
@@ -7,25 +12,32 @@ uint8_t buffer[ARRAYLEN][8][3];
 volatile uint32_t time;
 
 uint8_t mode = 0;
+uint8_t modeprev = 0;
 
 uint8_t hours = 0;
 uint8_t minutes = 0;
+uint8_t hum = 0;
+uint8_t temp = 0;
 volatile uint8_t seconds = 0;
+boolean minutePassed = true;
+
 
 void setup() {
-//Timer 1 als uhrzeitgeber via interrupt
+  //Timer 1 als uhrzeitgeber via interrupt
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
-  
+
   OCR1A = 15624;// 16 MHZ / 1024 -> alle 15625 schritte 1s um, 1 takt zum rücksetzen
   TCCR1B |= (1 << WGM12); // CTC modus
   TCCR1B |= (1 << CS12) | (1<<CS10); // Prescaler  auf 1024
   TIMSK1 |= (1 << OCIE1A); //compare interrupt an
-  
+
   DDRB = 0xFF;
   pinMode(2,INPUT_PULLUP);
   attachInterrupt(0,hallInterrupt, FALLING);
+
+  dht.begin();
 
   Serial.begin(9600); 
 }
@@ -33,30 +45,47 @@ void setup() {
 ISR(TIMER1_COMPA_vect){
   seconds++;
   if (seconds > 59){
-     minutes++;
-     seconds = 0;
-    }
-    if (minutes > 59){
-     hours++;
-     minutes = 0;
-    }
-    if (hours > 23)
-      hours = 0;
- }
-
-void loop() {
-if(seconds>30){
-  mode = 1;
-}else{
-  mode = 0;
+    minutes++;
+    minutePassed = true;
+    seconds = 0;
+  }
+  if (minutes > 59){
+    hours++;
+    minutes = 0;
+  }
+  if (hours > 23)
+    hours = 0;
 }
 
-  
-  if(mode == 0){//UHR
+void loop() {
+  if(seconds > 20 && seconds <= 50){
+    mode = 1;
+  }
+  else if (seconds > 50){
+    mode = 2;
+  }
+  else{
+    mode = 0;
+  }
+
+  if(mode != modeprev){
+    clearBuffer();
+    modeprev = mode;
+  }
+
+  //1 mal pro minute Temperatur und Luftfeuchtigkeit updaten
+if (minutePassed)
+  {
+    hum = dht.readHumidity();
+    temp = dht.readTemperature();
+    minutePassed = false;
+  }
+
+  if (mode == 0){
     char bufferH[3];  
     char bufferS[3];
     char bufferM[3];
-    
+
     sprintf(bufferH,"%02d",hours);
     sprintf(bufferM,"%02d",minutes);
     sprintf(bufferS,"%02d",seconds);
@@ -66,9 +95,25 @@ if(seconds>30){
     strToAry(":",26,128,0,255);
     strToAry(bufferS,30,255,0,255);
   }
-  
+
   if(mode == 1){
-    clearBuffer();  
+    char bufferT[3];
+    char bufferH[3];
+
+    sprintf(bufferH,"%02d",hum);
+    sprintf(bufferT,"%02d",temp);
+
+    strToAry(bufferT,0,0,0,255);
+    byteToRGB(0b00000010,12,255,255,255);
+    byteToRGB(0b00000101,13,255,255,255);
+    byteToRGB(0b00000010,14,255,255,255);
+    strToAry("C",15,255,255,255);
+    strToAry(bufferH,25,0,0,255);
+    strToAry("%",38,255,255,255);
+  }
+
+
+  if(mode == 2){
     monoToRGB('P',0,255,0,0);
     monoToRGB('I',5,0,255,0);
     monoToRGB('N',10,0,0,255);
@@ -132,7 +177,23 @@ void monoToRGB(int letter, int start, int r ,int g, int b){
       val >>=1;
     }
   }   
-} 
+}
+
+void byteToRGB(uint8_t val, int start, int r ,int g, int b){
+  for (int j = 0; j<8;j++){
+    if (val & 1){
+      buffer[start][7-j][0] = g;
+      buffer[start][7-j][1] = r; 
+      buffer[start][7-j][2] = b;         
+    }
+    else{
+      buffer[start][7-j][0] = 0;
+      buffer[start][7-j][1] = 0; 
+      buffer[start][7-j][2] = 0; 
+    }
+    val >>=1;
+  }  
+}
 
 
 void showBuffer(int spalte){
@@ -178,6 +239,8 @@ void latch() //auf Pin 8
   PORTB = 0b00001001;
   PORTB = 0;  
 }
+
+
 
 
 
